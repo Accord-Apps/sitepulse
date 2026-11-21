@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Check, Zap, Shield, Sparkles, Building2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Zap, Shield, Sparkles, Building2, Loader2, Lock } from 'lucide-react';
+import { openPaddleCheckout, initializePaddle } from '@/lib/paddle';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -15,24 +16,24 @@ export const PricingModal: React.FC<PricingModalProps> = ({
 }) => {
   const [loadingPlan, setLoadingPlan] = useState<'starter' | 'pro' | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      // Pre-warm Paddle on modal open
+      initializePaddle();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleCheckout = async (plan: 'starter' | 'pro') => {
+  const handleCheckout = (plan: 'starter' | 'pro') => {
     setLoadingPlan(plan);
     try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || 'Failed to start checkout.');
+      const opened = openPaddleCheckout(plan);
+      if (opened) {
+        onClose();
       }
-    } catch {
-      alert('Failed to connect to checkout.');
+    } catch (err) {
+      console.error('Checkout error:', err);
     } finally {
       setLoadingPlan(null);
     }
@@ -187,8 +188,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({
         </div>
 
         {/* Footer Guarantee */}
-        <div className="mt-8 text-center text-[11px] text-slate-500">
-          🔒 Secure 256-bit encryption • Cancel anytime with 1 click • No hidden fees
+        <div className="mt-8 text-center text-[11px] text-slate-500 flex items-center justify-center gap-2">
+          <Lock className="w-3 h-3 text-emerald-400" />
+          <span>Secure checkout powered by <strong>Paddle</strong> • Cards, Apple Pay, Google Pay, PayPal • Cancel anytime</span>
         </div>
       </div>
     </div>
