@@ -63,14 +63,16 @@ export const ExecutiveView: React.FC<ExecutiveViewProps> = ({ audit }) => {
           </div>
 
           <div className="flex items-center gap-3 no-print">
-            <button
-              onClick={() => window.print()}
+            <a
+              href={`/report?url=${encodeURIComponent(audit.url)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600/60 text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm"
-              title="Print or export as PDF"
+              title="Open full branded printable report"
             >
               <Printer className="w-4 h-4" />
-              <span>Print / PDF</span>
-            </button>
+              <span>Client PDF Report</span>
+            </a>
             <button
               onClick={handleCopy}
               className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"

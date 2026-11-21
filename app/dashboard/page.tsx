@@ -376,17 +376,17 @@ export default function DashboardPage() {
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Run Scan</span>
                   </Link>
-                  <button
-                    onClick={() =>
-                      alert(
-                        `Generating branded PDF for ${site.domain} with agency header "${agencyName}"!`
-                      )
-                    }
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition-all border border-slate-700"
+                  <a
+                    href={`/report?url=${encodeURIComponent(site.url)}&agency=${encodeURIComponent(
+                      agencyName
+                    )}&tagline=${encodeURIComponent(agencyTagline)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs transition-all border border-slate-700 flex items-center justify-center"
                     title="Export Branded Client PDF"
                   >
                     <Download className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                   <button
                     onClick={() => handleDelete(site.id)}
                     className="p-2 rounded-xl bg-slate-900 hover:bg-rose-950/40 hover:text-rose-400 text-slate-500 text-xs transition-all border border-slate-800"
