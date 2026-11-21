@@ -8,13 +8,13 @@ export const stripe = process.env.STRIPE_SECRET_KEY
 
 export const PLANS = {
   starter: {
-    name: 'Starter Owner Plan',
+    name: 'SitePulse Starter Owner Plan',
     price: 19,
     priceId: process.env.STRIPE_PRICE_STARTER || '',
     monitoredSitesLimit: 3,
   },
   pro: {
-    name: 'Pro Agency Plan',
+    name: 'SitePulse Pro Agency Plan',
     price: 39,
     priceId: process.env.STRIPE_PRICE_PRO || '',
     monitoredSitesLimit: 10,

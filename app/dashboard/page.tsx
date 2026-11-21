@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Zap,
+  Activity,
   Plus,
   Globe,
   ArrowUpRight,
@@ -150,10 +151,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20">
-                <Zap className="w-4 h-4 fill-current" />
+                <Activity className="w-4 h-4 text-slate-950 stroke-[2.5]" />
               </div>
               <span className="font-extrabold text-base tracking-tight text-white">
-                AuditFlow
+                SitePulse
               </span>
             </Link>
             <span className="text-slate-600">/</span>
@@ -415,7 +416,7 @@ export default function DashboardPage() {
               </button>
             </div>
             <p className="text-xs text-slate-400">
-              AuditFlow will automatically monitor this domain weekly and email you if speed or
+              SitePulse will automatically monitor this domain weekly and email you if speed or
               SEO health degrades.
             </p>
             <form onSubmit={handleAddSite} className="space-y-4 pt-2">
@@ -470,7 +471,7 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-slate-400">
               Customize the header on all PDF exports so your clients see your agency name instead
-              of AuditFlow.
+              of SitePulse.
             </p>
             <div className="space-y-3 pt-2">
               <div>

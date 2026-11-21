@@ -25,7 +25,7 @@ export async function runAudit(rawUrl: string): Promise<AuditResult> {
       method: 'GET',
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 (Compatible; SpeedSeoAuditor/1.0)',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 (Compatible; SitePulseBot/1.0; +https://sitepulse.app)',
         'Accept':
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
@@ -323,7 +323,7 @@ export async function runAudit(rawUrl: string): Promise<AuditResult> {
       : 'Your initial page response is healthy. Focus on maintaining fast media assets and targeted keyword metadata to continue growing traffic.';
 
   const developerHandoffNote = `
-### Speed & SEO Audit Report for ${domain}
+### SitePulse Health & Speed Report for ${domain}
 **Overall Score:** ${overallScore}/100 (Grade: ${overallGrade})
 **Generated at:** ${new Date().toUTCString()}
 

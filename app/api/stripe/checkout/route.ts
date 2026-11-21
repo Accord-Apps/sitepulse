@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
               currency: 'usd',
               product_data: {
                 name: selectedPlan.name,
-                description: `AuditFlow Automated Speed & SEO Monitoring (${selectedPlan.monitoredSitesLimit} sites)`,
+                description: `SitePulse Automated Speed & SEO Health Monitoring (${selectedPlan.monitoredSitesLimit} sites)`,
               },
               unit_amount: selectedPlan.price * 100, // cents ($1900 or $3900)
               recurring: { interval: 'month' as const },

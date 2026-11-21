@@ -11,6 +11,7 @@ import { PricingModal } from '@/components/PricingModal';
 import {
   Sparkles,
   Zap,
+  Activity,
   Briefcase,
   Code2,
   ExternalLink,
@@ -84,11 +85,11 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-950 font-black text-sm">
-              <Zap className="w-4 h-4 fill-current" />
+              <Activity className="w-4 h-4 text-slate-950 stroke-[2.5]" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="font-extrabold text-base tracking-tight text-white">
-                AuditFlow
+                SitePulse
               </span>
               <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 Dual-Lens
@@ -295,12 +296,12 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 space-y-2 mt-12 bg-slate-950">
         <div>
-          AuditFlow SaaS Blueprint •{' '}
+          SitePulse SaaS •{' '}
           <span className="text-slate-400">Starter: $19/mo (3 Sites)</span> •{' '}
           <span className="text-slate-400">Pro Agency: $39/mo (10 Sites + White Label)</span>
         </div>
         <p className="text-[11px] text-slate-600">
-          Engineered for high-converting audits and instant developer handoff.
+          Continuous site health, speed &amp; SEO monitoring with plain-English clarity.
         </p>
       </footer>
     </div>

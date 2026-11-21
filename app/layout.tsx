@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AuditFlow - Speed & SEO Audit for Business & Devs',
+  title: 'SitePulse - Speed & SEO Health Monitor for Business & Devs',
   description: 'Dual-lens speed & technical SEO audit: plain English for business owners, exact specs for developers.',
 };
 
