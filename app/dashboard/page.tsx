@@ -62,7 +62,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Agency White-Label Branding State
+  // Agency White-Label Branding State with LocalStorage
   const [agencyName, setAgencyName] = useState('My Web Studio');
   const [agencyTagline, setAgencyTagline] = useState('Website Maintenance & SEO Audits');
 
@@ -106,6 +106,45 @@ export default function DashboardPage() {
     },
   ]);
 
+  // Load saved sites & branding from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSites = localStorage.getItem('sitepulse_monitored_sites');
+        if (savedSites) {
+          const parsed = JSON.parse(savedSites);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSites(parsed);
+          }
+        }
+        const savedBranding = localStorage.getItem('sitepulse_agency_branding');
+        if (savedBranding) {
+          const parsedB = JSON.parse(savedBranding);
+          if (parsedB.name) setAgencyName(parsedB.name);
+          if (parsedB.tagline) setAgencyTagline(parsedB.tagline);
+        }
+      } catch (e) {
+        console.error('Failed to load local storage:', e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage when sites change
+  const saveSitesToStorage = (updatedSites: MonitoredSite[]) => {
+    setSites(updatedSites);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sitepulse_monitored_sites', JSON.stringify(updatedSites));
+    }
+  };
+
+  const saveBrandingToStorage = (name: string, tagline: string) => {
+    setAgencyName(name);
+    setAgencyTagline(tagline);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sitepulse_agency_branding', JSON.stringify({ name, tagline }));
+    }
+  };
+
   const handleAddSite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUrl.trim()) return;
@@ -127,7 +166,8 @@ export default function DashboardPage() {
         trend: 'steady',
         status: 'healthy',
       };
-      setSites([newSite, ...sites]);
+      const updated = [newSite, ...sites];
+      saveSitesToStorage(updated);
       setNewUrl('');
       setIsAddModalOpen(false);
     } catch {
@@ -136,7 +176,8 @@ export default function DashboardPage() {
   };
 
   const handleDelete = (id: string) => {
-    setSites(sites.filter((s) => s.id !== id));
+    const updated = sites.filter((s) => s.id !== id);
+    saveSitesToStorage(updated);
   };
 
   const avgScore = Math.round(
@@ -510,7 +551,10 @@ export default function DashboardPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="button"
-                onClick={() => setIsSettingsOpen(false)}
+                onClick={() => {
+                  saveBrandingToStorage(agencyName, agencyTagline);
+                  setIsSettingsOpen(false);
+                }}
                 className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
               >
                 Save Branding

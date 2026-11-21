@@ -98,6 +98,13 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-3 text-xs">
+            <Link
+              href="/compare"
+              className="text-slate-300 hover:text-white font-medium px-2 py-1 transition-colors flex items-center gap-1.5"
+            >
+              <span className="text-amber-400">⚔️</span>
+              <span>Compare</span>
+            </Link>
             <button
               onClick={() => setIsPricingOpen(true)}
               className="text-slate-300 hover:text-white font-medium px-2 py-1 transition-colors"
