@@ -42,7 +42,7 @@ interface MonitoredSite {
 }
 
 export default function DashboardPage() {
-  const { user, logout, upgradePlan } = useAuth();
+  const { user, isLoading, login, logout, upgradePlan } = useAuth();
 
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -214,6 +214,17 @@ export default function DashboardPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-400 text-sm">
+          <Activity className="w-8 h-8 text-emerald-400 animate-pulse" />
+          <span>Loading SitePulse Fleet...</span>
+        </div>
+      </div>
+    );
+  }
+
   const avgScore = Math.round(
     sites.reduce((acc, s) => acc + s.overallScore, 0) / (sites.length || 1)
   );
@@ -237,23 +248,25 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* White-Label Button with Pro Lock */}
-            <button
-              onClick={handleWhiteLabelClick}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
-                isPro
-                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-                  : 'bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 border-amber-500/30'
-              }`}
-            >
-              {isPro ? (
-                <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-              ) : (
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-              )}
-              <span className="hidden sm:inline">White-Label Branding</span>
-              {!isPro && <span className="text-[10px] uppercase font-bold bg-amber-500/20 px-1 rounded">Pro</span>}
-            </button>
+            {/* White-Label Button with Pro Lock (Only visible when logged in) */}
+            {user && (
+              <button
+                onClick={handleWhiteLabelClick}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                  isPro
+                    ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                    : 'bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 border-amber-500/30'
+                }`}
+              >
+                {isPro ? (
+                  <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                )}
+                <span className="hidden sm:inline">White-Label Branding</span>
+                {!isPro && <span className="text-[10px] uppercase font-bold bg-amber-500/20 px-1 rounded">Pro</span>}
+              </button>
+            )}
 
             {/* User Profile / Auth State */}
             {user ? (
@@ -296,12 +309,20 @@ export default function DashboardPage() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold"
-              >
-                Sign In
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsPricingOpen(true)}
+                  className="text-slate-300 hover:text-white font-medium px-2 py-1 text-xs transition-colors"
+                >
+                  Pricing
+                </button>
+                <button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all"
+                >
+                  Sign In
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -309,35 +330,99 @@ export default function DashboardPage() {
 
       {/* Main Dashboard Body */}
       <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
-        {/* Unauthenticated Lock Gate */}
-        {!user && (
-          <div className="p-8 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 text-center max-w-xl mx-auto space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
-              <Lock className="w-6 h-6" />
+        {!user ? (
+          /* Unauthenticated Gate: Clean Private Dashboard Screen */
+          <div className="max-w-2xl mx-auto py-8 space-y-8 animate-in fade-in duration-300">
+            <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 text-center space-y-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25">
+                <Lock className="w-7 h-7 stroke-[2.5]" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Private Fleet Dashboard</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Sign In to Access Your Fleet
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Continuous Core Web Vitals tracking, automated drift alerts, and client-ready white-label reports require an authenticated account.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Sign In or Create Account</span>
+                </button>
+                <button
+                  onClick={() => setIsPricingOpen(true)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all"
+                >
+                  View Subscription Plans
+                </button>
+              </div>
+
+              {/* 1-Click Fast Preview Options */}
+              <div className="pt-6 border-t border-slate-800/80 space-y-3">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-slate-500 block">
+                  Or Test Dashboard Features Instantly
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <button
+                    onClick={() => {
+                      login('free_trial@sitepulse.app', 'Alex (Free Trial)', 'free');
+                    }}
+                    className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-left transition-all group"
+                  >
+                    <div className="font-bold text-slate-200 group-hover:text-emerald-400 flex items-center justify-between">
+                      <span>⚡ Free Account (1 Site)</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Monitor 1 site. Extra slots &amp; white-label branding are paywalled.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      login('agency_owner@sitepulse.app', 'Summit Web Agency', 'pro');
+                    }}
+                    className="p-3.5 rounded-2xl bg-slate-950/70 border border-emerald-500/30 hover:border-emerald-500/60 text-left transition-all group"
+                  >
+                    <div className="font-bold text-emerald-400 flex items-center justify-between">
+                      <span>👑 Pro Agency (10 Sites)</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-60 text-emerald-400" />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Unlock custom agency branding &amp; client PDF report exports.
+                    </p>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold text-white">Sign In to View Monitored Fleet</h2>
-              <p className="text-xs text-slate-400">
-                Create a free account to track your first website, or subscribe to Pro Agency to
-                monitor up to 10 client properties with white-label reports.
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all"
+
+            {/* Back link */}
+            <div className="text-center">
+              <Link
+                href="/"
+                className="text-xs text-slate-500 hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
               >
-                Sign In / Register Free
-              </button>
-              <button
-                onClick={() => setIsPricingOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all"
-              >
-                View Paid Plans
-              </button>
+                <span>← Return to Free Instant Audit Tool</span>
+              </Link>
             </div>
           </div>
-        )}
+        ) : (
+          /* Authenticated Dashboard View */
+          <>
 
         {/* Free Plan Upgrade Banner */}
         {user && user.plan === 'free' && (
@@ -583,6 +668,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+        </>
+        )}
       </main>
 
       {/* Add Website Modal */}
