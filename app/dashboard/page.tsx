@@ -579,7 +579,7 @@ export default function DashboardPage() {
           <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link>
-          <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
+          <a href="mailto:accordapps@hotmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
         </div>
         <div className="text-[11px] text-slate-600">
           SitePulse &copy; {new Date().getFullYear()} Accord Apps • Payments powered by Paddle.com

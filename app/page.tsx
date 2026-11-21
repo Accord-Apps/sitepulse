@@ -325,7 +325,7 @@ export default function Home() {
             <Link href="/refund" className="hover:text-white transition-colors">
               Refund &amp; Cancellation
             </Link>
-            <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">
+            <a href="mailto:accordapps@hotmail.com" className="hover:text-emerald-400 transition-colors">
               Contact Support
             </a>
           </div>

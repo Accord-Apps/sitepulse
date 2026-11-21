@@ -77,8 +77,8 @@ export default function PrivacyPage() {
           <p>
             You have the right to request access to, correction of, or deletion of your personal
             information at any time. Simply contact us at{' '}
-            <a href="mailto:amarjamal@gmail.com" className="text-emerald-400 underline">
-              amarjamal@gmail.com
+            <a href="mailto:accordapps@hotmail.com" className="text-emerald-400 underline">
+              accordapps@hotmail.com
             </a>
             .
           </p>

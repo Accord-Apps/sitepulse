@@ -68,8 +68,8 @@ export default function RefundPage() {
           <h2 className="text-lg font-bold text-white">2. How to Request a Refund</h2>
           <p>
             To request a refund under our 14-day money-back guarantee, please email our support team at{' '}
-            <a href="mailto:amarjamal@gmail.com" className="text-emerald-400 underline font-semibold">
-              amarjamal@gmail.com
+            <a href="mailto:accordapps@hotmail.com" className="text-emerald-400 underline font-semibold">
+              accordapps@hotmail.com
             </a>{' '}
             with:
           </p>

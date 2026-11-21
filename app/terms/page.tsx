@@ -90,8 +90,8 @@ export default function TermsPage() {
           <h2 className="text-lg font-bold text-white">6. Contact Information</h2>
           <p>
             If you have questions regarding these Terms, please contact us at{' '}
-            <a href="mailto:amarjamal@gmail.com" className="text-emerald-400 underline">
-              amarjamal@gmail.com
+            <a href="mailto:accordapps@hotmail.com" className="text-emerald-400 underline">
+              accordapps@hotmail.com
             </a>
             .
           </p>

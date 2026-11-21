@@ -397,7 +397,7 @@ Generated with SitePulse: https://sitepulse-blond.vercel.app/compare
           <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           <Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link>
-          <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
+          <a href="mailto:accordapps@hotmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
         </div>
         <div className="text-[11px] text-slate-600">
           SitePulse Competitor Battle • Powered by Paddle.com • &copy; {new Date().getFullYear()} Accord Apps
