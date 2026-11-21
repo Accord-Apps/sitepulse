@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/AuthModal';
 import { PricingModal } from '@/components/PricingModal';
+import { supabase } from '@/lib/supabase';
 import {
   Zap,
   Activity,
@@ -82,25 +83,64 @@ export default function DashboardPage() {
   const isPro = user?.plan === 'pro';
   const isPaid = user?.plan === 'starter' || user?.plan === 'pro';
 
-  // Load saved sites & branding from localStorage on client mount
+  // Load saved sites & branding (Supabase + Local fallback)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedSites = localStorage.getItem('sitepulse_monitored_sites');
-        if (savedSites) {
-          const parsed = JSON.parse(savedSites);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSites(parsed);
+    const loadData = async () => {
+      if (user?.id) {
+        // Load from Supabase Database
+        try {
+          const { data, error } = await supabase
+            .from('monitored_sites')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (!error && data) {
+            const formatted: MonitoredSite[] = data.map((d: any) => ({
+              id: d.id,
+              domain: d.domain,
+              url: d.url,
+              overallScore: d.overall_score,
+              speedScore: d.speed_score,
+              seoScore: d.seo_score,
+              secScore: d.sec_score,
+              lastChecked: d.last_checked
+                ? new Date(d.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Recently',
+              trend: 'steady',
+              status: d.status,
+            }));
+            setSites(formatted);
           }
-        }
-        const savedBranding = localStorage.getItem('sitepulse_agency_branding');
-        if (savedBranding) {
-          const parsedB = JSON.parse(savedBranding);
-          if (parsedB.name) setAgencyName(parsedB.name);
-          if (parsedB.tagline) setAgencyTagline(parsedB.tagline);
+        } catch (e) {
+          console.warn('[Dashboard] Could not load sites from Supabase:', e);
         }
 
-        // Check for payment success redirect params
+        if (user.agencyName) setAgencyName(user.agencyName);
+        if (user.agencyTagline) setAgencyTagline(user.agencyTagline);
+      } else if (typeof window !== 'undefined') {
+        // LocalStorage fallback for demo
+        try {
+          const savedSites = localStorage.getItem('sitepulse_monitored_sites');
+          if (savedSites) {
+            const parsed = JSON.parse(savedSites);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setSites(parsed);
+            }
+          }
+          const savedBranding = localStorage.getItem('sitepulse_agency_branding');
+          if (savedBranding) {
+            const parsedB = JSON.parse(savedBranding);
+            if (parsedB.name) setAgencyName(parsedB.name);
+            if (parsedB.tagline) setAgencyTagline(parsedB.tagline);
+          }
+        } catch (e) {
+          console.error('Failed to load local storage:', e);
+        }
+      }
+
+      // Check for payment success redirect params
+      if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const paymentStatus = params.get('payment');
         const plan = params.get('plan') as 'starter' | 'pro' | null;
@@ -114,11 +154,11 @@ export default function DashboardPage() {
             origin: { y: 0.5 },
           });
         }
-      } catch (e) {
-        console.error('Failed to load local storage:', e);
       }
-    }
-  }, []);
+    };
+
+    loadData();
+  }, [user?.id, user?.agencyName, user?.agencyTagline]);
 
   const saveSitesToStorage = (updatedSites: MonitoredSite[]) => {
     setSites(updatedSites);
@@ -127,11 +167,25 @@ export default function DashboardPage() {
     }
   };
 
-  const saveBrandingToStorage = (name: string, tagline: string) => {
+  const saveBrandingToStorage = async (name: string, tagline: string) => {
     setAgencyName(name);
     setAgencyTagline(tagline);
     if (typeof window !== 'undefined') {
       localStorage.setItem('sitepulse_agency_branding', JSON.stringify({ name, tagline }));
+    }
+    if (user?.id) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            agency_name: name,
+            agency_tagline: tagline,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+      } catch (e) {
+        console.warn('Could not update branding in Supabase:', e);
+      }
     }
   };
 
@@ -152,7 +206,7 @@ export default function DashboardPage() {
     setIsAddModalOpen(true);
   };
 
-  const handleAddSite = (e: React.FormEvent) => {
+  const handleAddSite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUrl.trim()) return;
 
@@ -173,6 +227,33 @@ export default function DashboardPage() {
         trend: 'steady',
         status: 'healthy',
       };
+
+      if (user?.id) {
+        // Persist to Supabase
+        try {
+          const { data, error } = await supabase
+            .from('monitored_sites')
+            .insert({
+              user_id: user.id,
+              domain: newSite.domain,
+              url: newSite.url,
+              overall_score: newSite.overallScore,
+              speed_score: newSite.speedScore,
+              seo_score: newSite.seoScore,
+              sec_score: newSite.secScore,
+              status: newSite.status,
+            })
+            .select()
+            .single();
+
+          if (data && !error) {
+            newSite.id = data.id;
+          }
+        } catch (e) {
+          console.warn('Could not insert site to Supabase:', e);
+        }
+      }
+
       const updated = [newSite, ...sites];
       saveSitesToStorage(updated);
       setNewUrl('');
@@ -182,7 +263,14 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (user?.id) {
+      try {
+        await supabase.from('monitored_sites').delete().eq('id', id);
+      } catch (e) {
+        console.warn('Could not delete site from Supabase:', e);
+      }
+    }
     const updated = sites.filter((s) => s.id !== id);
     saveSitesToStorage(updated);
   };
