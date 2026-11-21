@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import { AuthModal } from '@/components/AuthModal';
+import { PricingModal } from '@/components/PricingModal';
 import {
   Zap,
   Activity,
@@ -15,13 +18,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
-  Settings,
   Sparkles,
   TrendingUp,
   PartyPopper,
+  Lock,
+  User,
+  LogOut,
+  ShieldAlert,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { PricingModal } from '@/components/PricingModal';
 
 interface MonitoredSite {
   id: string;
@@ -37,36 +42,21 @@ interface MonitoredSite {
 }
 
 export default function DashboardPage() {
+  const { user, logout, upgradePlan } = useAuth();
+
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newUrl, setNewUrl] = useState('');
-  const [activePlan, setActivePlan] = useState<'starter' | 'pro' | null>(null);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const paymentStatus = params.get('payment');
-      const plan = params.get('plan') as 'starter' | 'pro' | null;
-
-      if (paymentStatus === 'success' || paymentStatus === 'demo_success') {
-        setShowSuccessBanner(true);
-        setActivePlan(plan || 'pro');
-        confetti({
-          particleCount: 100,
-          spread: 80,
-          origin: { y: 0.5 },
-        });
-      }
-    }
-  }, []);
+  const [paywallReason, setPaywallReason] = useState<string | null>(null);
 
   // Agency White-Label Branding State with LocalStorage
   const [agencyName, setAgencyName] = useState('My Web Studio');
   const [agencyTagline, setAgencyTagline] = useState('Website Maintenance & SEO Audits');
 
-  // Initial demo sites for the subscriber
+  // Monitored Sites State
   const [sites, setSites] = useState<MonitoredSite[]>([
     {
       id: '1',
@@ -80,31 +70,17 @@ export default function DashboardPage() {
       trend: 'up',
       status: 'healthy',
     },
-    {
-      id: '2',
-      domain: 'client-bakery.com',
-      url: 'https://client-bakery.com',
-      overallScore: 68,
-      speedScore: 54,
-      seoScore: 72,
-      secScore: 80,
-      lastChecked: 'Yesterday at 04:30 PM',
-      trend: 'down',
-      status: 'critical',
-    },
-    {
-      id: '3',
-      domain: 'myportfoliostore.com',
-      url: 'https://myportfoliostore.com',
-      overallScore: 82,
-      speedScore: 78,
-      seoScore: 85,
-      secScore: 90,
-      lastChecked: '2 days ago',
-      trend: 'steady',
-      status: 'warning',
-    },
   ]);
+
+  // Limits based on user plan
+  const planLimits = {
+    free: 1,
+    starter: 3,
+    pro: 10,
+  };
+  const currentLimit = user ? planLimits[user.plan] : 1;
+  const isPro = user?.plan === 'pro';
+  const isPaid = user?.plan === 'starter' || user?.plan === 'pro';
 
   // Load saved sites & branding from localStorage on client mount
   useEffect(() => {
@@ -123,13 +99,27 @@ export default function DashboardPage() {
           if (parsedB.name) setAgencyName(parsedB.name);
           if (parsedB.tagline) setAgencyTagline(parsedB.tagline);
         }
+
+        // Check for payment success redirect params
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get('payment');
+        const plan = params.get('plan') as 'starter' | 'pro' | null;
+
+        if (paymentStatus === 'success' || paymentStatus === 'demo_success') {
+          setShowSuccessBanner(true);
+          upgradePlan(plan || 'pro');
+          confetti({
+            particleCount: 100,
+            spread: 80,
+            origin: { y: 0.5 },
+          });
+        }
       } catch (e) {
         console.error('Failed to load local storage:', e);
       }
     }
   }, []);
 
-  // Save to localStorage when sites change
   const saveSitesToStorage = (updatedSites: MonitoredSite[]) => {
     setSites(updatedSites);
     if (typeof window !== 'undefined') {
@@ -143,6 +133,23 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sitepulse_agency_branding', JSON.stringify({ name, tagline }));
     }
+  };
+
+  const handleOpenAddModal = () => {
+    if (!user) {
+      setIsAuthOpen(true);
+      return;
+    }
+    if (sites.length >= currentLimit) {
+      setPaywallReason(
+        `You have reached the ${user.plan.toUpperCase()} plan limit of ${currentLimit} monitored site${
+          currentLimit > 1 ? 's' : ''
+        }. Upgrade to track more websites!`
+      );
+      setIsPricingOpen(true);
+      return;
+    }
+    setIsAddModalOpen(true);
   };
 
   const handleAddSite = (e: React.FormEvent) => {
@@ -180,13 +187,40 @@ export default function DashboardPage() {
     saveSitesToStorage(updated);
   };
 
+  const handleWhiteLabelClick = () => {
+    if (!isPro) {
+      setPaywallReason(
+        'White-Label Agency Branding is exclusive to Pro Agency subscribers ($39/mo). Put your own agency logo & name on client reports.'
+      );
+      setIsPricingOpen(true);
+      return;
+    }
+    setIsSettingsOpen(true);
+  };
+
+  const handleDownloadReport = (site: MonitoredSite) => {
+    if (!isPaid) {
+      setPaywallReason(
+        'Client-ready PDF reports are available on paid plans ($19 Starter or $39 Pro). Upgrade to download and deliver reports to your clients.'
+      );
+      setIsPricingOpen(true);
+      return;
+    }
+    window.open(
+      `/report?url=${encodeURIComponent(site.url)}&agency=${encodeURIComponent(
+        agencyName
+      )}&tagline=${encodeURIComponent(agencyTagline)}`,
+      '_blank'
+    );
+  };
+
   const avgScore = Math.round(
     sites.reduce((acc, s) => acc + s.overallScore, 0) / (sites.length || 1)
   );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
-      {/* Top Bar */}
+      {/* Top Navbar */}
       <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -203,27 +237,134 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* White-Label Button with Pro Lock */}
             <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-medium flex items-center gap-1.5 transition-all"
+              onClick={handleWhiteLabelClick}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                isPro
+                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  : 'bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 border-amber-500/30'
+              }`}
             >
-              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+              {isPro ? (
+                <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+              )}
               <span className="hidden sm:inline">White-Label Branding</span>
+              {!isPro && <span className="text-[10px] uppercase font-bold bg-amber-500/20 px-1 rounded">Pro</span>}
             </button>
 
-            <button
-              onClick={() => setIsPricingOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Pro Plan ($39/mo)</span>
-            </button>
+            {/* User Profile / Auth State */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs flex items-center gap-1.5">
+                  <User className="w-3 h-3 text-slate-400" />
+                  <span className="font-semibold text-white max-w-[100px] truncate">{user.name}</span>
+                  <span
+                    className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+                      user.plan === 'pro'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : user.plan === 'starter'
+                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {user.plan}
+                  </span>
+                </div>
+
+                {user.plan === 'free' && (
+                  <button
+                    onClick={() => {
+                      setPaywallReason(null);
+                      setIsPricingOpen(true);
+                    }}
+                    className="px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Upgrade</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800"
+                  title="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Dashboard Body */}
       <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+        {/* Unauthenticated Lock Gate */}
+        {!user && (
+          <div className="p-8 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 text-center max-w-xl mx-auto space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-white">Sign In to View Monitored Fleet</h2>
+              <p className="text-xs text-slate-400">
+                Create a free account to track your first website, or subscribe to Pro Agency to
+                monitor up to 10 client properties with white-label reports.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all"
+              >
+                Sign In / Register Free
+              </button>
+              <button
+                onClick={() => setIsPricingOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all"
+              >
+                View Paid Plans
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Free Plan Upgrade Banner */}
+        {user && user.plan === 'free' && (
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div className="text-xs">
+                <span className="font-bold text-white">You are on the Free Preview Plan (1 Site Limit).</span>
+                <p className="text-slate-400">
+                  Upgrade to <strong>Pro Agency ($39/mo)</strong> to monitor 10 client sites and unlock custom White-Label PDF reports.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setPaywallReason(null);
+                setIsPricingOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold text-xs whitespace-nowrap shadow-md shadow-emerald-500/20 active:scale-95"
+            >
+              Upgrade to Pro ($39/mo)
+            </button>
+          </div>
+        )}
+
         {/* Payment Success Welcome Banner */}
         {showSuccessBanner && (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-950/40 to-slate-900 border border-emerald-500/40 flex items-center justify-between gap-4 animate-in fade-in duration-300">
@@ -233,12 +374,10 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h4 className="font-bold text-white text-sm sm:text-base">
-                  Welcome to {activePlan === 'starter' ? 'Starter Owner' : 'Pro Agency'}! 🎉
+                  Welcome to {user?.plan === 'starter' ? 'Starter Owner' : 'Pro Agency'}! 🎉
                 </h4>
                 <p className="text-xs text-slate-300">
-                  Your subscription is active. You have unlocked{' '}
-                  {activePlan === 'starter' ? '3' : '10'} monitored website slots and weekly automated
-                  audits.
+                  Your subscription is active. You have unlocked {currentLimit} monitored website slots and automated audits.
                 </p>
               </div>
             </div>
@@ -251,7 +390,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Header with Title and Add Button */}
+        {/* Dashboard Title & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -263,7 +402,7 @@ export default function DashboardPage() {
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
@@ -279,11 +418,11 @@ export default function DashboardPage() {
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black text-white">{sites.length}</span>
-              <span className="text-xs text-slate-500">/ 10 sites allowed</span>
+              <span className="text-xs text-slate-500">/ {currentLimit} allowed</span>
             </div>
             <div className="text-[11px] text-emerald-400 mt-2 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
-              <span>All automated crawlers active</span>
+              <span>{user ? `${user.plan.toUpperCase()} tier active` : 'Sign in to sync'}</span>
             </div>
           </div>
 
@@ -303,21 +442,21 @@ export default function DashboardPage() {
             </div>
             <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
-              <span>+3 pts average gain this month</span>
+              <span>Health score steady</span>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
             <span className="text-xs text-slate-400 font-medium block mb-1">
-              Pending Client Alerts
+              White-Label Export
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-amber-400">1</span>
-              <span className="text-xs text-slate-500">site needs attention</span>
+              <span className={`text-xl font-bold ${isPro ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {isPro ? 'Unlocked (Pro)' : 'Locked'}
+              </span>
             </div>
-            <div className="text-[11px] text-amber-400/90 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              <span>client-bakery.com mobile speed dropped</span>
+            <div className="text-[11px] text-slate-500 mt-2">
+              {isPro ? 'Custom logo & agency name active' : 'Requires Pro Agency plan'}
             </div>
           </div>
         </div>
@@ -418,17 +557,20 @@ export default function DashboardPage() {
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Run Scan</span>
                   </Link>
-                  <a
-                    href={`/report?url=${encodeURIComponent(site.url)}&agency=${encodeURIComponent(
-                      agencyName
-                    )}&tagline=${encodeURIComponent(agencyTagline)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs transition-all border border-slate-700 flex items-center justify-center"
-                    title="Export Branded Client PDF"
+
+                  {/* PDF Download Button with Gatekeeper */}
+                  <button
+                    onClick={() => handleDownloadReport(site)}
+                    className={`p-2 rounded-xl text-xs transition-all border flex items-center gap-1 ${
+                      isPaid
+                        ? 'bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 border-slate-700'
+                        : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-amber-400'
+                    }`}
+                    title={isPaid ? 'Export Branded Client PDF' : 'Unlock PDF Export (Paid Plans)'}
                   >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
+                    {isPaid ? <Download className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />}
+                  </button>
+
                   <button
                     onClick={() => handleDelete(site.id)}
                     className="p-2 rounded-xl bg-slate-900 hover:bg-rose-950/40 hover:text-rose-400 text-slate-500 text-xs transition-all border border-slate-800"
@@ -458,7 +600,7 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-slate-400">
               SitePulse will automatically monitor this domain weekly and email you if speed or
-              SEO health degrades.
+              SEO health degrades. ({sites.length}/{currentLimit} slots used)
             </p>
             <form onSubmit={handleAddSite} className="space-y-4 pt-2">
               <div>
@@ -494,7 +636,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* White-Label Branding Settings Modal */}
+      {/* White-Label Branding Settings Modal (Pro only) */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
@@ -564,13 +706,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Pricing Modal */}
+      {/* Pricing Modal with Paywall Reason */}
       <PricingModal
         isOpen={isPricingOpen}
-        onClose={() => setIsPricingOpen(false)}
-        onSelectPlan={(plan) => {
-          alert(`Selected ${plan.toUpperCase()} Plan! Connecting to Stripe Checkout next.`);
+        onClose={() => {
+          setIsPricingOpen(false);
+          setPaywallReason(null);
         }}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
       />
 
       {/* Footer with Compliance Links */}

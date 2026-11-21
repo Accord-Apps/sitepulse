@@ -8,6 +8,8 @@ import { ScoreDial } from '@/components/ScoreDial';
 import { ExecutiveView } from '@/components/ExecutiveView';
 import { DeveloperView } from '@/components/DeveloperView';
 import { PricingModal } from '@/components/PricingModal';
+import { AuthModal } from '@/components/AuthModal';
+import { useAuth } from '@/lib/auth-context';
 import {
   Sparkles,
   Zap,
@@ -22,15 +24,19 @@ import {
   Shield,
   Layers,
   LayoutDashboard,
+  User,
+  LogOut,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function Home() {
+  const { user, logout } = useAuth();
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'executive' | 'developer'>('executive');
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Auto-run if query param ?url= is passed in URL
   useEffect(() => {
@@ -103,7 +109,7 @@ export default function Home() {
               className="text-slate-300 hover:text-white font-medium px-2 py-1 transition-colors flex items-center gap-1.5"
             >
               <span className="text-amber-400">⚔️</span>
-              <span>Compare</span>
+              <span className="hidden sm:inline">Compare</span>
             </Link>
             <button
               onClick={() => setIsPricingOpen(true)}
@@ -116,14 +122,64 @@ export default function Home() {
               className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold flex items-center gap-1.5 transition-all"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Dashboard</span>
+              <span>Fleet</span>
             </Link>
-            <button
-              onClick={() => setIsPricingOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-            >
-              Get Pro ($39/mo)
-            </button>
+
+            {/* Auth / Profile State */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs flex items-center gap-1.5 hover:border-slate-700"
+                >
+                  <User className="w-3 h-3 text-slate-400" />
+                  <span className="font-semibold text-white max-w-[80px] sm:max-w-[120px] truncate">{user.name}</span>
+                  <span
+                    className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+                      user.plan === 'pro'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : user.plan === 'starter'
+                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {user.plan}
+                  </span>
+                </Link>
+
+                {user.plan === 'free' ? (
+                  <button
+                    onClick={() => setIsPricingOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                  >
+                    Upgrade
+                  </button>
+                ) : null}
+
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800"
+                  title="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="text-slate-300 hover:text-white font-medium px-2 py-1 transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setIsPricingOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                >
+                  Get Pro ($39/mo)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -291,13 +347,16 @@ export default function Home() {
         )}
       </main>
 
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
+
       {/* Pricing Modal */}
       <PricingModal
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
-        onSelectPlan={(plan) => {
-          alert(`Selected ${plan.toUpperCase()} plan! Connecting to Stripe Checkout next.`);
-        }}
       />
 
       {/* Footer with Compliance Links */}
