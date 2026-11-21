@@ -17,10 +17,13 @@ export interface UserSession {
 interface AuthContextType {
   user: UserSession | null;
   isLoading: boolean;
+  isRecoveryMode: boolean;
+  setIsRecoveryMode: (val: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
+  updatePassword: (password: string) => Promise<{ error?: string }>;
   login: (email: string, name?: string, plan?: 'free' | 'starter' | 'pro') => void;
   logout: () => void;
   upgradePlan: (plan: 'starter' | 'pro', subscriptionId?: string) => void;
@@ -30,10 +33,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  isRecoveryMode: false,
+  setIsRecoveryMode: () => {},
   signIn: async () => ({}),
   signUp: async () => ({}),
   signOut: async () => {},
   resetPassword: async () => ({}),
+  updatePassword: async () => ({}),
   login: () => {},
   logout: () => {},
   upgradePlan: () => {},
@@ -43,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   // Fetch full user profile from Supabase profiles table
   const fetchUserProfile = useCallback(async (authUserId: string, authEmail: string, userMetaName?: string) => {
@@ -82,6 +89,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
+    // Check if user landed from a password recovery link
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+        setIsRecoveryMode(true);
+      }
+    }
+
     const initAuth = async () => {
       try {
         // First check Supabase session
@@ -109,9 +125,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    // Listen to Supabase auth state changes (login, logout, token refresh)
+    // Listen to Supabase auth state changes (login, logout, password recovery)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+      } else if (event === 'SIGNED_IN' && session?.user) {
         await fetchUserProfile(
           session.user.id,
           session.user.email || '',
@@ -156,10 +174,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Real Supabase Sign Up
   const signUp = async (email: string, password: string, name?: string) => {
     try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/dashboard`
+        : 'https://sitepulse-blond.vercel.app/dashboard';
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             name: name || email.split('@')[0],
           },
@@ -212,6 +235,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { message: 'Password reset link sent! Please check your inbox.' };
     } catch (err: any) {
       return { error: err?.message || 'Failed to request password reset' };
+    }
+  };
+
+  // Update user's password when coming from recovery link
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        return { error: error.message };
+      }
+      setIsRecoveryMode(false);
+      return {};
+    } catch (err: any) {
+      return { error: err?.message || 'Failed to update password' };
     }
   };
 
@@ -287,10 +324,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isLoading,
+        isRecoveryMode,
+        setIsRecoveryMode,
         signIn,
         signUp,
         signOut,
         resetPassword,
+        updatePassword,
         login,
         logout,
         upgradePlan,

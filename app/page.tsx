@@ -30,13 +30,20 @@ import {
 import confetti from 'canvas-confetti';
 
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user, isRecoveryMode, logout } = useAuth();
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'executive' | 'developer'>('executive');
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Auto-open update password modal if arriving from recovery email
+  useEffect(() => {
+    if (isRecoveryMode) {
+      setIsAuthOpen(true);
+    }
+  }, [isRecoveryMode]);
 
   // Auto-run if query param ?url= is passed in URL
   useEffect(() => {
@@ -351,6 +358,7 @@ export default function Home() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+        defaultMode={isRecoveryMode ? 'update_password' : 'signin'}
       />
 
       {/* Pricing Modal */}

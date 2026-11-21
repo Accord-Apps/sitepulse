@@ -43,7 +43,7 @@ interface MonitoredSite {
 }
 
 export default function DashboardPage() {
-  const { user, isLoading, login, logout, upgradePlan } = useAuth();
+  const { user, isLoading, isRecoveryMode, login, logout, upgradePlan } = useAuth();
 
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -51,7 +51,15 @@ export default function DashboardPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [showConfirmedBanner, setShowConfirmedBanner] = useState(false);
   const [paywallReason, setPaywallReason] = useState<string | null>(null);
+
+  // Auto-open update password modal if arriving from recovery email
+  useEffect(() => {
+    if (isRecoveryMode) {
+      setIsAuthOpen(true);
+    }
+  }, [isRecoveryMode]);
 
   // Agency White-Label Branding State with LocalStorage
   const [agencyName, setAgencyName] = useState('My Web Studio');
@@ -141,7 +149,9 @@ export default function DashboardPage() {
 
       // Check for payment success redirect params
       if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
+        const hash = window.location.hash || '';
+        const search = window.location.search || '';
+        const params = new URLSearchParams(search);
         const paymentStatus = params.get('payment');
         const plan = params.get('plan') as 'starter' | 'pro' | null;
 
@@ -153,6 +163,11 @@ export default function DashboardPage() {
             spread: 80,
             origin: { y: 0.5 },
           });
+        }
+
+        // Check for email verification confirmation
+        if ((hash.includes('access_token=') || search.includes('verified=true')) && !hash.includes('type=recovery')) {
+          setShowConfirmedBanner(true);
         }
       }
     };
@@ -511,6 +526,31 @@ export default function DashboardPage() {
         ) : (
           /* Authenticated Dashboard View */
           <>
+
+        {/* Email Confirmed Banner */}
+        {showConfirmedBanner && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-950/40 to-slate-900 border border-emerald-500/40 flex items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-black">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-bold text-white text-sm">
+                  Email Verified Successfully! ✅
+                </h4>
+                <p className="text-xs text-slate-300">
+                  Your SitePulse account is active. You can now monitor domains and generate reports.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowConfirmedBanner(false)}
+              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Free Plan Upgrade Banner */}
         {user && user.plan === 'free' && (
@@ -894,6 +934,7 @@ export default function DashboardPage() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+        defaultMode={isRecoveryMode ? 'update_password' : 'signin'}
       />
 
       {/* Footer with Compliance Links */}
