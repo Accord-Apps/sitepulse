@@ -12,7 +12,8 @@ export async function POST(req: NextRequest) {
     const plan = (body?.plan as 'starter' | 'pro') || 'pro';
     const email = body?.email;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const origin = req.headers.get('origin') || (req.headers.get('host') ? `https://${req.headers.get('host')}` : 'http://localhost:3000');
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
     const selectedPlan = PLANS[plan] || PLANS.pro;
 
     // If Stripe is configured with a real Secret Key:
