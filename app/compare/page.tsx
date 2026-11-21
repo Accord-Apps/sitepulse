@@ -392,8 +392,16 @@ Generated with SitePulse: https://sitepulse-blond.vercel.app/compare
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 space-y-2 bg-slate-950">
-        <div>SitePulse Competitor Battle • Benchmark any two websites in 3 seconds</div>
+      <footer className="border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500 space-y-3 bg-slate-950">
+        <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
+          <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link>
+          <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
+        </div>
+        <div className="text-[11px] text-slate-600">
+          SitePulse Competitor Battle • Powered by Paddle.com • &copy; {new Date().getFullYear()} Accord Apps
+        </div>
       </footer>
     </div>
   );

@@ -572,6 +572,19 @@ export default function DashboardPage() {
           alert(`Selected ${plan.toUpperCase()} Plan! Connecting to Stripe Checkout next.`);
         }}
       />
+
+      {/* Footer with Compliance Links */}
+      <footer className="border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-500 space-y-2 bg-slate-950 mt-12">
+        <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link>
+          <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">Support</a>
+        </div>
+        <div className="text-[11px] text-slate-600">
+          SitePulse &copy; {new Date().getFullYear()} Accord Apps • Payments powered by Paddle.com
+        </div>
+      </footer>
     </div>
   );
 }

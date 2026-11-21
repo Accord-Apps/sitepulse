@@ -300,16 +300,45 @@ export default function Home() {
         }}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 space-y-2 mt-12 bg-slate-950">
-        <div>
-          SitePulse SaaS •{' '}
-          <span className="text-slate-400">Starter: $19/mo (3 Sites)</span> •{' '}
-          <span className="text-slate-400">Pro Agency: $39/mo (10 Sites + White Label)</span>
+      {/* Footer with Compliance Links */}
+      <footer className="border-t border-slate-800/80 py-10 px-4 text-xs text-slate-500 space-y-6 mt-16 bg-slate-950">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-1.5 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                <Activity className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-bold text-white text-sm">SitePulse</span>
+            </div>
+            <p className="text-[11px] text-slate-400 max-w-sm">
+              Continuous website speed &amp; technical SEO monitoring with dual-lens clarity for business owners and developers.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/refund" className="hover:text-white transition-colors">
+              Refund &amp; Cancellation
+            </Link>
+            <a href="mailto:amarjamal@gmail.com" className="hover:text-emerald-400 transition-colors">
+              Contact Support
+            </a>
+          </div>
         </div>
-        <p className="text-[11px] text-slate-600">
-          Continuous site health, speed &amp; SEO monitoring with plain-English clarity.
-        </p>
+
+        <div className="max-w-6xl mx-auto pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-600 text-center sm:text-left">
+          <div>
+            &copy; {new Date().getFullYear()} SitePulse by Accord Apps. Payments securely processed by <strong>Paddle.com</strong> as Merchant of Record.
+          </div>
+          <div>
+            14-Day Money-Back Guarantee • Cancel anytime
+          </div>
+        </div>
       </footer>
     </div>
   );
